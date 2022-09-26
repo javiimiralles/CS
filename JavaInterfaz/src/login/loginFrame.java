@@ -5,8 +5,27 @@
 package login;
 
 import java.io.File;
+import java.io.IOException;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
+import java.util.UUID;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec; 
+
 
 /**
  *
@@ -16,12 +35,22 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class loginFrame extends javax.swing.JFrame {
 private int cantidad = 0;
+private static String probando1 = "";
+        
+private byte archivos [][] = new byte[6][99999];
+private final static String AES = "AES";
+	private final static String UTF8 = "UTF-8";
+	// Definir un vector inicial de 16 bytes
+	private static final String IV_STRING = "Linsk110011ksniL";
     /**
      * Creates new form loginFrame
      */
     public loginFrame() {
         initComponents();
     }
+    
+    
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -34,6 +63,7 @@ private int cantidad = 0;
 
         jLabel1 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
+        jButton2 = new javax.swing.JButton();
         jPanel4 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
@@ -45,6 +75,14 @@ private int cantidad = 0;
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jButton2.setText("Cifrar");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+        jPanel2.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 250, -1, -1));
 
         jPanel4.setBackground(new java.awt.Color(204, 0, 204));
 
@@ -128,15 +166,72 @@ int respuesta = fc.showOpenDialog(this);
 if (respuesta == JFileChooser.APPROVE_OPTION) {
     //Crear un objeto File con el archivo elegido
     File archivoElegido = fc.getSelectedFile();
+   toString(archivoElegido);
+    
+    
     //Mostrar el nombre del archvivo en un campo de texto
     System.out.println("Archivo elegido: " + archivoElegido.getName());
+    
+       //      System.out.println("Archivo elegido: " + Files.readAllBytes(archivoElegido.toPath()));
+    cantidad++;
 }
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        // TODO add your handling code here:
+        
+        String clave = generateSecreKey();
+        
+       
+        
+           try {
+       String cifrado = aesEncry(probando1, clave);
+        System.out.println("Archivo cifrado: " + cifrado);
+    } catch (Exception e) {
+      // TODO Auto-generated catch block
+     
+    }
+    }//GEN-LAST:event_jButton2ActionPerformed
+
     /**
      * @param args the command line arguments
      */
+     public static void toString(File arch) {
+    
+    
+       try {
+      String contenido = new String(Files.readAllBytes(arch.toPath()));
+      System.out.println(contenido);
+      probando1 = contenido;
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+     
+     public static String generateSecreKey() {
+		String uuid = UUID.randomUUID().toString();
+		uuid = uuid.replaceAll("-", "");
+		return uuid.substring(0, 16);
+	}
+	public static String aesEncry(String content,String key) throws UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
+		byte[] contentByte = content.getBytes(UTF8);
+		byte[] keyByte = key.getBytes();
+		// Inicializa un objeto clave
+		SecretKeySpec keySpec = new SecretKeySpec(keyByte ,AES);
+		// Inicializa un vector inicial, si no se pasa, el vector inicial con todos los 0 se usa por defecto
+		byte[] initParam = IV_STRING.getBytes();
+		IvParameterSpec ivSpec = new IvParameterSpec(initParam);
+		// Especificar algoritmo de cifrado, modo de trabajo y método de llenado
+		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		cipher.init(Cipher.ENCRYPT_MODE, keySpec,ivSpec);
+		byte[] encryptedBytes = cipher.doFinal(contentByte);
+		String encodedString = Base64.getEncoder().encodeToString(encryptedBytes);
+		return encodedString;
+	}
+
+    
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -171,6 +266,7 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
