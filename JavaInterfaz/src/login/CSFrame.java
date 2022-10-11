@@ -4,13 +4,24 @@
  */
 package login;
 
+import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import javax.swing.JFileChooser;
 
 
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -21,7 +32,9 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import javax.imageio.ImageIO;
 
 /**
  *
@@ -33,6 +46,7 @@ public class CSFrame extends javax.swing.JFrame {
     public static String archivoStringCifrar = null;
      public static String archivoStringDescifrar = null;
      public static String cadenaOriginal = null;
+     public static String nombreActual = null;
     /**
      * Creates new form CSFrame
      */
@@ -114,7 +128,7 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
     archivoStringCifrar = fileToString(archivoElegido);
     cadenaOriginal = archivoStringCifrar;
     
-    
+    nombreActual = archivoElegido.getName();
     //byte [] fileInByte = fileToByte(archivoElegido);
     //Mostrar el nombre del archvivo en un campo de texto
     System.out.println("Archivo elegido: " + archivoElegido.getName());
@@ -142,10 +156,10 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
           try{
-     String archivoDescifrado = desencriptar(archivoStringDescifrar, claveTest);
+     byte [] archivoDescifrado = desencriptar(archivoStringDescifrar, claveTest);
        System.out.println("descifrado:" + archivoDescifrado);
        
-       if(archivoDescifrado == cadenaOriginal){
+       if(archivoDescifrado.equals(cadenaOriginal)){
        System.out.println("ok");
 
        }else{System.out.println("problema");
@@ -159,8 +173,8 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
     //metodo que pasa un file a String
     
     //metodo  que transforma un File en un byte[]
-       public byte[] fileToByte(File file){
-         //File file = new File(');
+      /* public byte[] fileToByte(File file){
+         //File file = new File(');ºº
              byte[] fileContent ;
              
              fileContent = new byte[999999999];
@@ -173,13 +187,94 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
          }
          
          return fileContent;
+    }*/
+    
+    
+    //TRANSFORMAMOS DE IMAGEN A ARRAY DE BYTE[]
+    
+    public byte[] imageToByte(String path, String extension ) throws IOException{
+ BufferedImage bi2 = ImageIO.read(new File(path)); 
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                ImageIO.write(bi2, extension, bos);
+
+        byte[] file = bos.toByteArray();
+        return file;
+    }
+    
+    //METODO QUE ESCRIBE EN UN FICHERO DE TEXTO 
+    
+public void escribirFichero(String str) throws IOException{
+        try (FileWriter fichero =new FileWriter("C:\\Users\\eloyo\\Desktop\\servidor\\cifrado\\claves.txt",true)) {
+            try (BufferedWriter bf = new BufferedWriter(fichero)) {
+                bf.write(nombreActual+".txt\n");
+                bf.write(str+"\n");
+            }
+            fichero.close();
+        }
+       }
+
+//METODO QUE ESCRIBE FICHERO ENCRIPTADO EN BASE 64
+
+public void escribirEncriptado(String str) throws IOException{
+        try (FileWriter fichero =new FileWriter("C:\\Users\\eloyo\\Desktop\\servidor\\cifrado\\"+nombreActual+".txt")) {
+            try (BufferedWriter bf = new BufferedWriter(fichero)) {
+                bf.write(str);
+            }
+            fichero.close();
+        }
+       }
+
+//METODO QUE CONVIERTE SECRET KEY EN STRING
+public String secretToString(SecretKeySpec key){
+String encodedKey = Base64.getEncoder().encodeToString(key.getEncoded());
+
+return encodedKey;
+}
+
+//METODO QUE CONVIERTE STRING EN SECRETKEY
+
+public SecretKeySpec stringToSecret(String str){
+// decode the base64 encoded string
+byte[] decodedKey = Base64.getDecoder().decode(str);
+// rebuild key using SecretKeySpec
+SecretKeySpec originalKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
+return originalKey;
+}
+
+//METODO QUE LEE LINEAS DE UN FICHERO
+public String obtenerclave(String[] args) {
+        File file = new File("C:\\Users\\eloyo\\Desktop\\servidor\\cifrado\\claves.txt");
+ String clave = "No se ha encontrado clave";
+        
+            try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+           
+                for(int i=0;br!=null;i=+2){
+                    
+                    if(nombreActual.equals(br.readLine())){
+                        clave=br.readLine();}
+}
+
+            }
+         catch (IOException e) {
+            e.printStackTrace();
+        }
+            
+            System.out.println(clave);
+            return clave;
+    }
+    
+    //TRANSFORMAMOS DE BYTE [] A IMAGEN
+    public void byteToImage(String path, byte[] data, String extension) throws IOException{
+    ByteArrayInputStream bis = new ByteArrayInputStream(data);
+                BufferedImage bi = ImageIO.read(bis);                
+                ImageIO.write(bi, extension, new File(path));
     }
        
      //metodo que transforma un file a string
        public String fileToString(File archivo){
            String contenido = "empty";
            try {
-              String str = "C:\\Users\\eloyo\\Desktop\\cipher\\"+archivo.getName();
+              String str = "C:\\Users\\eloyo\\Desktop\\servidor\\sincifrar\\"+archivo.getName();
                System.out.println(str);
                
      contenido = new String(Files.readAllBytes(Paths.get(str)));
@@ -226,8 +321,12 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
      * @throws IllegalBlockSizeException
      * @throws BadPaddingException 
      */
-    public String encriptar(String datos, String claveSecreta) throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+    public String encriptar(String datos, String claveSecreta) throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
         SecretKeySpec secretKey = this.crearClave(claveSecreta);
+        
+        String toWrite = secretToString(secretKey);
+        
+        escribirFichero(toWrite);
         
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");        
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
@@ -236,6 +335,7 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
         byte[] bytesEncriptados = cipher.doFinal(datosEncriptar);
         String encriptado = Base64.getEncoder().encodeToString(bytesEncriptados);
 
+         escribirEncriptado(encriptado);
         return encriptado;
     }
 
@@ -251,7 +351,7 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
      * @throws IllegalBlockSizeException
      * @throws BadPaddingException 
      */
-    public String desencriptar(String datosEncriptados, String claveSecreta) throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+    public byte[] desencriptar(String datosEncriptados, String claveSecreta) throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
         SecretKeySpec secretKey = this.crearClave(claveSecreta);
 
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
@@ -261,7 +361,20 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
         byte[] datosDesencriptados = cipher.doFinal(bytesEncriptados);
         String datos = new String(datosDesencriptados);
         
-        return datos;
+        guardarArchivo(bytesEncriptados);
+        return datosDesencriptados;
+    }
+    
+    //ESCRIBE STRING COMO ARCHIVO 
+    public void guardarArchivo(byte[] str) throws IOException {
+     // Creating an instance of file
+       String path = "C:\\Users\\eloyo\\Desktop\\servidor\\descifrados\\"+nombreActual;
+  // byte[] data = str.getBytes();
+try (FileOutputStream stream = new FileOutputStream(path)) {
+    stream.write(str);
+}catch(Exception e){
+e.printStackTrace();
+}
     }
     /**
      * @param args the command line arguments
