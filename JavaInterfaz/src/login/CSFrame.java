@@ -10,12 +10,19 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import javax.swing.JFileChooser;
+
+
+
+import java.io.*;
+import java.io.IOException;
+import java.nio.file.Files;
 
 
 
@@ -28,6 +35,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.UUID;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -47,6 +55,7 @@ public class CSFrame extends javax.swing.JFrame {
      public static String archivoStringDescifrar = null;
      public static String cadenaOriginal = null;
      public static String nombreActual = null;
+     public static File inicial=null;
     /**
      * Creates new form CSFrame
      */
@@ -123,7 +132,10 @@ int respuesta = fc.showOpenDialog(this);
 if (respuesta == JFileChooser.APPROVE_OPTION) {
     //Crear un objeto File con el archivo elegido
     File archivoElegido = fc.getSelectedFile();
-    
+    if(inicial==null){
+    inicial=archivoElegido;
+    System.out.println(fileToString(inicial));
+    }
     
     archivoStringCifrar = fileToString(archivoElegido);
     cadenaOriginal = archivoStringCifrar;
@@ -143,6 +155,8 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
         try{
+            claveTest=generateWord();
+            escribirFichero(claveTest);
      String archivoCifrado = encriptar(archivoStringCifrar, claveTest);
        System.out.println("cifrado:" + archivoCifrado);
        archivoStringDescifrar = archivoCifrado;
@@ -156,10 +170,15 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
           try{
-     byte [] archivoDescifrado = desencriptar(archivoStringDescifrar, claveTest);
+              claveTest=lee();
+              System.out.println(claveTest);
+              System.out.println(nombreActual);
+              archivoStringDescifrar=devuelve();
+     String archivoDescifrado = desencriptar(archivoStringDescifrar, claveTest);
        System.out.println("descifrado:" + archivoDescifrado);
        
-       if(archivoDescifrado.equals(cadenaOriginal)){
+       
+       if(archivoDescifrado.equals(fileToString(inicial))){
        System.out.println("ok");
 
        }else{System.out.println("problema");
@@ -168,7 +187,77 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
         e.printStackTrace();
         }
     }//GEN-LAST:event_jButton2ActionPerformed
+    //Transforma cifrado en string
+    public String devuelve() throws IOException {
+        String texto=null;
+        
+        BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\eloyo\\Desktop\\servidor\\cifrado\\"+nombreActual));
+    // Leer la primera línea, guardando en un String
+    texto = br.readLine();
+    // Repetir mientras no se llegue al final del fichero
     
+    System.out.println(texto);
+        return texto;
+    }
+
+    
+    
+    //Metodo devuelve clave secreta correspondiente
+    
+    
+    public String lee() {
+        String texto="";
+        String definitivo="";
+        BufferedReader br = null;
+try {
+    // Crear un objeto BufferedReader al que se le pasa 
+    //   un objeto FileReader con el nombre del fichero
+    br = new BufferedReader(new FileReader("C:\\Users\\eloyo\\Desktop\\servidor\\cifrado\\claves.txt"));
+    // Leer la primera línea, guardando en un String
+    texto = br.readLine();
+    // Repetir mientras no se llegue al final del fichero
+    while( texto!=null) {
+        // Hacer lo que sea con la línea leída
+        // En este ejemplo sólo se muestra por consola
+        System.out.println(texto);
+        if(texto.equals(nombreActual)){
+            definitivo=br.readLine();
+            texto=null;
+        }
+        else{
+            texto = br.readLine();
+        }
+        // Leer la siguiente línea
+        
+        
+    }
+    
+}
+// Captura de excepción por fichero no encontrado
+catch (FileNotFoundException ex) {
+    System.out.println("Error: Fichero no encontrado");
+    ex.printStackTrace();
+}
+// Captura de cualquier otra excepción
+catch(Exception ex) {
+    System.out.println("Error de lectura del fichero");
+    ex.printStackTrace();
+}
+// Asegurar el cierre del fichero en cualquier caso
+finally {
+    try {
+        // Cerrar el fichero si se ha podido abrir
+        if(br != null) {
+            br.close();
+        }
+    }
+    catch (Exception ex) {
+        System.out.println("Error al cerrar el fichero");
+        ex.printStackTrace();
+    }
+}
+        return definitivo;
+    }
     
     //metodo que pasa un file a String
     
@@ -187,20 +276,24 @@ if (respuesta == JFileChooser.APPROVE_OPTION) {
          }
          
          return fileContent;
-    }*/
-    
+    }*/    
     
     //TRANSFORMAMOS DE IMAGEN A ARRAY DE BYTE[]
     
-    public byte[] imageToByte(String path, String extension ) throws IOException{
+   /* public byte[] imageToByte(String path, String extension ) throws IOException{
  BufferedImage bi2 = ImageIO.read(new File(path)); 
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 ImageIO.write(bi2, extension, bos);
 
         byte[] file = bos.toByteArray();
         return file;
-    }
-    
+    }*/
+    //METODO QUE GENERA UNA PALABRA ALEATORIA
+    public static String generateWord() {
+		String uuid = UUID.randomUUID().toString();
+		uuid = uuid.replaceAll("-", "");
+		return uuid.substring(0, 11);
+	}
     //METODO QUE ESCRIBE EN UN FICHERO DE TEXTO 
     
 public void escribirFichero(String str) throws IOException{
@@ -264,11 +357,11 @@ public String obtenerclave(String[] args) {
     }
     
     //TRANSFORMAMOS DE BYTE [] A IMAGEN
-    public void byteToImage(String path, byte[] data, String extension) throws IOException{
+   /* public void byteToImage(String path, byte[] data, String extension) throws IOException{
     ByteArrayInputStream bis = new ByteArrayInputStream(data);
                 BufferedImage bi = ImageIO.read(bis);                
                 ImageIO.write(bi, extension, new File(path));
-    }
+    }*/
        
      //metodo que transforma un file a string
        public String fileToString(File archivo){
@@ -326,7 +419,7 @@ public String obtenerclave(String[] args) {
         
         String toWrite = secretToString(secretKey);
         
-        escribirFichero(toWrite);
+        
         
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");        
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
@@ -351,27 +444,43 @@ public String obtenerclave(String[] args) {
      * @throws IllegalBlockSizeException
      * @throws BadPaddingException 
      */
-    public byte[] desencriptar(String datosEncriptados, String claveSecreta) throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
+    public String desencriptar(String datosEncriptados, String claveSecreta) throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
+        System.out.println("He entrado");
         SecretKeySpec secretKey = this.crearClave(claveSecreta);
 
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
         cipher.init(Cipher.DECRYPT_MODE, secretKey);
         
         byte[] bytesEncriptados = Base64.getDecoder().decode(datosEncriptados);
-        byte[] datosDesencriptados = cipher.doFinal(bytesEncriptados);
+        byte[] datosDesencriptados;
+        datosDesencriptados = cipher.doFinal(bytesEncriptados);
         String datos = new String(datosDesencriptados);
-        
-        guardarArchivo(bytesEncriptados);
-        return datosDesencriptados;
+     
+        guardarArchivo(datos);
+        return datos;
     }
     
     //ESCRIBE STRING COMO ARCHIVO 
-    public void guardarArchivo(byte[] str) throws IOException {
+    public void guardarArchivo(String str) throws IOException {
      // Creating an instance of file
-       String path = "C:\\Users\\eloyo\\Desktop\\servidor\\descifrados\\"+nombreActual;
-  // byte[] data = str.getBytes();
-try (FileOutputStream stream = new FileOutputStream(path)) {
-    stream.write(str);
+        /*String guardada=null;
+        String[] varios=nombreActual.split(".");
+        for(int i=0; i<2;i++)
+        {
+            guardada=varios[i];
+            if(i==0){
+                guardada+='.';
+            }
+            
+        }*/
+       String path = "C:\\Users\\eloyo\\Desktop\\servidor\\descifrados\\cover1.jpg";
+       File path2= new File(path);
+  
+try {
+    FileWriter wr= new FileWriter(path2);
+    wr.write(str);
+    wr.flush();
+    wr.close();
 }catch(Exception e){
 e.printStackTrace();
 }
